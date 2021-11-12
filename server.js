@@ -15,6 +15,12 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/bookmethod", { 
 
   //  Write routes here
 
+  // I need route to get /exercise
+
+  //  I need route to get /stats
+
+
+
   //  API
 
   //  "/api/workouts" get Last Workout
