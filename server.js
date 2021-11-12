@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const db = require('./models');
-const Workout = require('./models/Workout');
+const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 
@@ -12,17 +12,15 @@ app.use(express.json());
 app.use(express.static("public"));
 
 mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/bookmethod", { useNewUrlParser: true });
-
   //  Write routes here
-
-  // I need route to get /exercise
-
-  //  I need route to get /stats
-
-
+  app.get('/exercise', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/exercise.html'))
+  })
+  app.get('/stats', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/stats.html'))
+  })
 
   //  API
-
   //  "/api/workouts" get Last Workout
   //  /api/workouts
   app.get('/api/workouts', ({body}, res) => {
