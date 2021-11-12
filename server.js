@@ -26,7 +26,7 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/bookmethod", op
   //  API
   //  "/api/workouts" get Last Workout
   //  /api/workouts
-  app.get('/api/workouts', ({body}, res) => {
+  app.get('/api/workouts', (req, res) => {
     db.Workout.find({})
     .then(resp => {
       res.json(resp);
@@ -52,6 +52,7 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/bookmethod", op
   //  /api/workouts
   app.post('/api/workouts', (req, res) => {
     db.Workout.create(req.body)
+    .then(({_id}) => db.Workout.findOneAndUpdate({}, {$push: {exercises: _id}}, {new: true}))
     .then(resp => {
       res.json(resp);
     })
