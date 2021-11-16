@@ -1,8 +1,10 @@
 const express = require('express');
-const router = require('express').Router();
+// const router = require('express').Router();
+// const mongojs = require('mongojs')
 const mongoose = require('mongoose');
 const db = require('./models');
 const path = require('path');
+
 
 const PORT = process.env.PORT || 3000;
 
@@ -13,21 +15,35 @@ app.use(express.json());
 app.use(express.static("public"));
 
 const opts = {useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true, useFindAndModify: false};
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/bookmethod", opts);
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/workout", opts);
 
   //  Write routes here
+  //  Render Homepage
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/index.html'))
+  });
+
+  //  Render Exercise.html
   app.get('/exercise', (req, res) => {
     res.sendFile(path.join(__dirname, './public/exercise.html'))
-  })
+  });
+
+  //  Render  Stats.html
   app.get('/stats', (req, res) => {
     res.sendFile(path.join(__dirname, './public/stats.html'))
-  })
+  });
 
-  //  API
-  //  "/api/workouts" get Last Workout
-  //  /api/workouts
+  //  get workout to display on homepage
   app.get('/api/workouts', (req, res) => {
-    db.Workout.find({})
+    db.Workout.aggregate([
+      {
+        $addFields: { 
+          totalDuration: {
+            $sum: '$exercises.duration'
+          }
+        }
+      }
+    ])
     .then(resp => {
       res.json(resp);
     })
@@ -35,12 +51,23 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/bookmethod", op
       res.json(err);
     });
   });
-  //  /api/workouts/" + id  "PUT" add Exercise
-  // /api/workouts/:id
-  app.put('/api/workouts/:id', ({body}, res) => {
-    //  Need different collection name also don't know if this method will add a exercise
-    db.Exercise.create(body)
-      .then(({_id}) => db.Exercise.findOneAndUpdate({}, {$push: {name: _id}}, {new: true}))
+
+  //This is pushing a exercise into a workout
+  app.put('/api/workouts/:id', (req, res) => {
+    // console log different params in this if it isn't working right
+    db.Workout.findByIdAndUpdate(
+      req.params.id, 
+      {
+        $push: 
+        {
+          exercises: req.body
+        }
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    )
       .then(resp => {
         res.json(resp);
       })
@@ -48,22 +75,26 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/bookmethod", op
         res.json(err);
       });
   });
-  //  "/api/workouts   "POST",  Create Workout
-  //  /api/workouts
+//  This one is Creating a workout
   app.post('/api/workouts', (req, res) => {
     db.Workout.create(req.body)
-    .then(({_id}) => db.Workout.findOneAndUpdate({}, {$push: {exercises: _id}}, {new: true}))
     .then(resp => {
+      console.log(req.body)
       res.json(resp);
     })
     .catch(err => {
       res.json(err);
     });
   });
-  //  `/api/workouts/range` no method stated  get Workouts In Range
-  //  /api/workouts/range getting all of the totals for workout totals
+
+  //  Add Agregate Tech to make this function
   app.get('/api/workouts/range', (req, res) => {
-    db.Workout.find({})
+    db.Workout.aggregate([{
+      $addFields: { totalDuration: {
+        $sum: '$exercises.duration'
+      }}
+    }])
+    .limit(7)
     .then(resp => {
       res.json(resp);
     })
@@ -71,6 +102,7 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/bookmethod", op
       res.json(err);
     });
   });
+
 app.listen(PORT, () => {
   console.log(`App running on port ${PORT}!`);
 });

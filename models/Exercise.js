@@ -23,9 +23,8 @@ const ExerciseSchema = new Schema ({
   sets: {
     type: Number
   },
-  date: {
-    type: Date,
-    defualt: Date.now
+  distance: {
+    type: Number
   }
 });
 
